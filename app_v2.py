@@ -676,6 +676,26 @@ def process_excel(input_bytes: bytes, input_filename: str = "") -> Tuple[bytes, 
         title_text = f"{title_text}\n{base_name}"
     title_cell.value = title_text
     title_cell.alignment = openpyxl.styles.Alignment(horizontal="center", vertical="center", wrap_text=True)
+    title_cell.fill = PatternFill(start_color="9DC3E6", end_color="9DC3E6", fill_type="solid")  # light blue
+    title_cell.font = Font(color="FF0000", bold=True, size=14)
+    for rr in range(2, 5):
+        for cc in range(1, 3):
+            ws.cell(rr, cc).border = thin_border
+
+    # Experience header (as in v1)
+    ws["C2"] = "ΑΜ ΕΜΠΕΙΡΙΑΣ"
+    ws["C2"].fill = orange_fill
+    ws["C2"].font = Font(bold=True)
+    ws["C2"].border = thin_border
+
+    # D2/E2 reserved for yellow totals (filled later)
+    ws["D2"].fill = orange_fill
+    ws["D2"].font = Font(bold=True)
+    ws["D2"].border = thin_border
+    ws["E2"].fill = orange_fill
+    ws["E2"].font = Font(bold=True)
+    ws["E2"].border = thin_border
+
 
     # Apply borders on header row 5
     for c in range(1, end_col):
@@ -719,9 +739,18 @@ def process_excel(input_bytes: bytes, input_filename: str = "") -> Tuple[bytes, 
         ws.cell(r, 4).number_format = "0.0"
 
         # Column E "X" becomes SUM of month allocations (numeric)
-        ws.cell(r, 5).value = f"=SUM(F{r}:{last_month_col_letter}{r})"
+        ws.cell(r, 5).value = round(model.row_steps_count.get(r, 0) / Model.UNITS_PER_AM, 1)
         ws.cell(r, 5).border = thin_border
         ws.cell(r, 5).number_format = "0.0"
+
+        # Red highlight on requested AM (col D) only if allocated < requested (step-accurate)
+        req_s = model.row_requested_steps.get(r, 0)
+        alloc_s = model.row_steps_count.get(r, 0)
+        if req_s > 0 and alloc_s < req_s:
+            ws.cell(r, 4).font = Font(color="FF0000", bold=True)
+        else:
+            ws.cell(r, 4).font = Font(bold=True)
+
 
         # mark allowed months area
         for ym in model.row_months_list[r]:
@@ -912,6 +941,14 @@ def process_excel(input_bytes: bytes, input_filename: str = "") -> Tuple[bytes, 
         cell.alignment = Alignment(horizontal="center", vertical="center")
         if model.year_total_steps(y) >= Model.MAX_YEARLY_CAPACITY_STEPS:
             cell.fill = orange_fill
+
+    # Yellow totals in D2/E2 (requested / allocated), as in v1
+    yellow_req_steps = sum(model.row_requested_steps.get(r, 0) for r in model.row_period if model.is_yellow_row(r))
+    yellow_alloc_steps = sum(model.row_steps_count.get(r, 0) for r in model.row_period if model.is_yellow_row(r))
+    ws["D2"].value = round(yellow_req_steps / Model.UNITS_PER_AM, 1)
+    ws["E2"].value = round(yellow_alloc_steps / Model.UNITS_PER_AM, 1)
+    ws["D2"].number_format = "0.0"
+    ws["E2"].number_format = "0.0"
 
     summary_text = build_summary_text(model, impossible_rows)
 
