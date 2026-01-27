@@ -1026,7 +1026,7 @@ with right:
         pass
 
 st.markdown("---")
-st.markdown("### 👉 Ανέβασε το INPUT excel (μόνο 2 στήλες)")
+st.markdown("### 👉 Ανέβασε το INPUT excel (μόνο 3 στήλες)")
 
 uploaded = st.file_uploader(
     " ",
