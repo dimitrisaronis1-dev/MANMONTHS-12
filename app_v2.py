@@ -677,7 +677,7 @@ def process_excel(input_bytes: bytes, input_filename: str = "") -> Tuple[bytes, 
     title_cell.value = title_text
     title_cell.alignment = openpyxl.styles.Alignment(horizontal="center", vertical="center", wrap_text=True)
     title_cell.fill = PatternFill(start_color="9DC3E6", end_color="9DC3E6", fill_type="solid")  # light blue
-    title_cell.font = Font(color="FF0000", bold=True, size=14)
+    title_cell.font = Font(color="FF0000", bold=True, size=11)
     for rr in range(2, 5):
         for cc in range(1, 3):
             ws.cell(rr, cc).border = thin_border
